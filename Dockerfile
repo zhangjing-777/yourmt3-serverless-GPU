@@ -1,4 +1,4 @@
-# YourMT3 Dockerfile
+# YourMT3 RunPod Dockerfile
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
 # 设置工作目录
@@ -28,14 +28,13 @@ RUN pip3 install --no-cache-dir \
     boto3 \
     requests \
     numpy \
-    scipy
+    scipy \
+    note-seq \
+    mir_eval \
+    runpod
 
 # 克隆 YourMT3 仓库
 RUN git clone https://github.com/mimbres/YourMT3.git /app/yourmt3
-
-# 安装 YourMT3
-WORKDIR /app/yourmt3
-RUN pip3 install --no-cache-dir -e .
 
 # 回到工作目录
 WORKDIR /app
