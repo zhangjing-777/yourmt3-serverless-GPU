@@ -1,4 +1,4 @@
-# YourMT3 RunPod Dockerfile
+# YourMT3 Dockerfile
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
 # 设置工作目录
