@@ -30,9 +30,18 @@ RUN pip3 install --no-cache-dir boto3 runpod
 # 克隆 YourMT3 仓库 (从 Hugging Face)
 RUN git clone https://huggingface.co/spaces/mimbres/YourMT3 /app/yourmt3
 
-# 安装 YourMT3 依赖
+# 手动安装核心依赖 (跳过有问题的 git clone)
 WORKDIR /app/yourmt3
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir \
+    gradio \
+    librosa \
+    mir_eval \
+    note-seq \
+    numba \
+    pretty_midi \
+    scipy \
+    yt-dlp \
+    || echo "Some packages failed, continuing..."
 
 # 回到工作目录
 WORKDIR /app
