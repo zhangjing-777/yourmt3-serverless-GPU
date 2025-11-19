@@ -27,14 +27,8 @@ RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https:/
 # 安装基础依赖
 RUN pip3 install --no-cache-dir boto3 runpod
 
-# 克隆 YourMT3 仓库 (从 Hugging Face) 并强制下载 LFS 文件
-RUN git lfs install && \
-    GIT_LFS_SKIP_SMUDGE=0 git clone https://huggingface.co/spaces/mimbres/YourMT3 /app/yourmt3 && \
-    cd /app/yourmt3 && \
-    git lfs pull && \
-    ls -lh amt/logs/2024/mc13_256_g4_all_v7_mt3f_sqr_rms_moe_wf4_n8k2_silu_rope_rp_b36_nops/checkpoints/last.ckpt && \
-    echo "Model file size:" && \
-    du -h amt/logs/2024/mc13_256_g4_all_v7_mt3f_sqr_rms_moe_wf4_n8k2_silu_rope_rp_b36_nops/checkpoints/last.ckpt
+# j
+COPY temp/YourMT3 /app/yourmt3
 
 # 安装 YourMT3 依赖
 WORKDIR /app/yourmt3
