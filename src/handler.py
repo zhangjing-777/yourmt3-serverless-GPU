@@ -7,11 +7,33 @@ import traceback
 import base64
 import runpod
 
-# 添加 YourMT3 的 amt/src 到路径
-sys.path.append(os.path.abspath('/app/yourmt3/amt/src'))
+# 添加 YourMT3 的 amt/src 到路径 - 必须在导入前
+sys.path.insert(0, '/app/yourmt3/amt/src')
+sys.path.insert(0, '/app/yourmt3')
+
+# 先检查路径是否存在
+if not os.path.exists('/app/yourmt3/amt/src'):
+    print("ERROR: /app/yourmt3/amt/src does not exist!")
+    print("Available directories:", os.listdir('/app/yourmt3') if os.path.exists('/app/yourmt3') else "yourmt3 not found")
+    sys.exit(1)
+
+# 检查 model_helper.py 是否存在
+model_helper_path = '/app/yourmt3/amt/src/model_helper.py'
+if not os.path.exists(model_helper_path):
+    print(f"ERROR: {model_helper_path} does not exist!")
+    print("Files in amt/src:", os.listdir('/app/yourmt3/amt/src') if os.path.exists('/app/yourmt3/amt/src') else "directory not found")
+    sys.exit(1)
+
+print(f"Found model_helper.py at: {model_helper_path}")
 
 # 导入 YourMT3 的函数
-from model_helper import load_model_checkpoint, transcribe
+try:
+    from model_helper import load_model_checkpoint, transcribe
+    print("Successfully imported model_helper!")
+except ImportError as e:
+    print(f"Failed to import model_helper: {e}")
+    sys.exit(1)
+
 import torchaudio
 
 # AWS S3 配置
@@ -61,71 +83,33 @@ def upload_to_s3(file_path, s3_key):
     return url
 
 def handler(job):
-    """RunPod handler 函数"""
-    job_input = job['input']
-    job_id = job.get('id', 'unknown')
-    
-    # 获取音频
-    audio_base64 = job_input.get('audio')
-    audio_url = job_input.get('audio_url')
-    
-    if not audio_base64 and not audio_url:
-        return {"error": "需要提供 audio (base64) 或 audio_url"}
-    
+    """调试版 handler - 返回目录结构"""
     try:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            print(f"Processing job: {job_id}")
-            
-            # 1. 保存音频文件
-            audio_path = os.path.join(temp_dir, "input.mp3")
-            
-            if audio_base64:
-                print("Decoding base64 audio...")
-                audio_data = base64.b64decode(audio_base64)
-                with open(audio_path, 'wb') as f:
-                    f.write(audio_data)
-            else:
-                import requests
-                print(f"Downloading from URL: {audio_url}")
-                response = requests.get(audio_url, timeout=300)
-                with open(audio_path, 'wb') as f:
-                    f.write(response.content)
-            
-            # 2. 准备音频信息（模仿 app.py 的 prepare_media）
-            info = torchaudio.info(audio_path)
-            audio_info = {
-                "filepath": audio_path,
-                "track_name": f"job_{job_id}",
-                "sample_rate": int(info.sample_rate),
-                "bits_per_sample": int(info.bits_per_sample) if hasattr(info, 'bits_per_sample') else 16,
-                "num_channels": int(info.num_channels),
-                "num_frames": int(info.num_frames),
-                "duration": int(info.num_frames / info.sample_rate),
-                "encoding": str.lower(info.encoding) if hasattr(info, 'encoding') else 'unknown',
-            }
-            
-            # 3. 加载模型并转录
-            model = load_yourmt3_model()
-            print("Starting transcription...")
-            midi_file = transcribe(model, audio_info)
-            print(f"Transcription completed: {midi_file}")
-            
-            # 4. 上传到 S3
-            output_filename = f"{job_id}.mid"
-            s3_key = f"{S3_FOLDER}/{output_filename}"
-            midi_url = upload_to_s3(midi_file, s3_key)
-            
-            # 5. 返回结果
-            return {
-                "status": "success",
-                "midi_url": midi_url,
-                "s3_key": s3_key,
-                "job_id": job_id
-            }
-    
+        info = {}
+        
+        # 检查目录
+        info['yourmt3_exists'] = os.path.exists('/app/yourmt3')
+        info['amt_exists'] = os.path.exists('/app/yourmt3/amt')
+        info['amt_src_exists'] = os.path.exists('/app/yourmt3/amt/src')
+        
+        if os.path.exists('/app/yourmt3'):
+            info['yourmt3_files'] = os.listdir('/app/yourmt3')[:20]
+        
+        if os.path.exists('/app/yourmt3/amt'):
+            info['amt_files'] = os.listdir('/app/yourmt3/amt')[:20]
+        
+        if os.path.exists('/app/yourmt3/amt/src'):
+            info['amt_src_files'] = os.listdir('/app/yourmt3/amt/src')[:20]
+            info['has_model_helper'] = 'model_helper.py' in os.listdir('/app/yourmt3/amt/src')
+        
+        info['sys_path'] = sys.path[:10]
+        
+        return {
+            "status": "debug",
+            "info": info
+        }
+        
     except Exception as e:
-        print(f"Error: {str(e)}")
-        print(traceback.format_exc())
         return {
             "status": "error",
             "error": str(e),
@@ -138,12 +122,8 @@ if __name__ == "__main__":
     print("="*60)
     print(f"S3 Bucket: {S3_BUCKET_NAME}/{S3_FOLDER}")
     
-    # 预加载模型
-    try:
-        load_yourmt3_model()
-    except Exception as e:
-        print(f"Warning: Could not pre-load model: {e}")
-        print("Will try to load on first request...")
+    # 不预加载，等第一个请求再加载
+    print("\nModel will be loaded on first request...")
     
     print("\nStarting RunPod handler...")
     runpod.serverless.start({"handler": handler})
