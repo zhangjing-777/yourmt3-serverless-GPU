@@ -31,7 +31,10 @@ RUN pip3 install --no-cache-dir boto3 runpod
 RUN git lfs install && \
     GIT_LFS_SKIP_SMUDGE=0 git clone https://huggingface.co/spaces/mimbres/YourMT3 /app/yourmt3 && \
     cd /app/yourmt3 && \
-    git lfs pull
+    git lfs pull && \
+    ls -lh amt/logs/2024/mc13_256_g4_all_v7_mt3f_sqr_rms_moe_wf4_n8k2_silu_rope_rp_b36_nops/checkpoints/last.ckpt && \
+    echo "Model file size:" && \
+    du -h amt/logs/2024/mc13_256_g4_all_v7_mt3f_sqr_rms_moe_wf4_n8k2_silu_rope_rp_b36_nops/checkpoints/last.ckpt
 
 # 安装 YourMT3 依赖
 WORKDIR /app/yourmt3
