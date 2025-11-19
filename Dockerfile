@@ -1,4 +1,4 @@
-# YourMT3 Dockerfile
+# YourMT3 RunPod Dockerfile
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
 # 设置工作目录
@@ -27,8 +27,11 @@ RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https:/
 # 安装基础依赖
 RUN pip3 install --no-cache-dir boto3 runpod
 
-# 克隆 YourMT3 仓库 (从 Hugging Face)
-RUN git clone https://huggingface.co/spaces/mimbres/YourMT3 /app/yourmt3
+# 克隆 YourMT3 仓库 (从 Hugging Face) 并强制下载 LFS 文件
+RUN git lfs install && \
+    GIT_LFS_SKIP_SMUDGE=0 git clone https://huggingface.co/spaces/mimbres/YourMT3 /app/yourmt3 && \
+    cd /app/yourmt3 && \
+    git lfs pull
 
 # 安装 YourMT3 依赖
 WORKDIR /app/yourmt3
