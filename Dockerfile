@@ -57,7 +57,7 @@ RUN pip3 install --no-cache-dir \
 WORKDIR /app
 
 # 复制处理脚本
-COPY src/handler_final.py /app/handler.py
+COPY src/handler.py /app/handler.py
 
 # 设置环境变量
 ENV PYTHONUNBUFFERED=1
